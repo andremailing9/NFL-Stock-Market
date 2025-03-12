@@ -104,7 +104,13 @@ page = st.sidebar.radio("Navigate", ["Home", "Trade", "Portfolio", "Leaderboard"
 if page == "Trade":
     st.subheader("💰 Buy & Sell Stocks")
     player_name = st.session_state.current_user.capitalize()
-    player_data = st.session_state.players[player_name]
+
+# Ensure player data exists
+if player_name not in st.session_state.players:
+    st.session_state.players[player_name] = {"cash": 10000, "portfolio": {}, "cost_basis": {}}
+
+player_data = st.session_state.players[player_name]
+
 
     st.write(f"Welcome, {player_name}! Your balance: **${player_data['cash']:.2f}**")
 
