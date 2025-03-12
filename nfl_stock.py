@@ -148,3 +148,21 @@ if page == "Portfolio":
         }))
     else:
         st.write("No shares owned yet.")
+if page == "Leaderboard":
+    st.subheader("🏆 Leaderboard")
+    leaderboard_data = []
+    
+    for player, data in st.session_state.players.items():
+        total_portfolio_value = sum(
+            shares * st.session_state.teams.get(team, 0)
+            for team, shares in data["portfolio"].items()
+        )
+        total_value = data["cash"] + total_portfolio_value
+        leaderboard_data.append((player, total_value))
+    
+    leaderboard_df = pd.DataFrame(leaderboard_data, columns=["Player", "Total Value"])
+    leaderboard_df = leaderboard_df.sort_values(by="Total Value", ascending=False)
+    
+    st.dataframe(leaderboard_df.style.format({"Total Value": "${:.2f}"}))
+
+
