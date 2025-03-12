@@ -119,24 +119,37 @@ if page == "Trade":
             st.success(f"{player_name} bought {buy_shares:.2f} shares of {buy_team} at {market.teams[buy_team]:.2f} each.")
         else:
             st.error("Insufficient funds.")
-            # Sell Stocks Feature
-sell_team = st.selectbox("Select a team to sell", list(player_data["portfolio"].keys()), key="sell_team")
-sell_shares = st.number_input("Enter shares to sell", min_value=0.1, step=0.1, key="sell_shares")
+ # Sell Stocks Feature
+if player_data["portfolio"]:  # Check if player owns any stocks
+    sell_team = st.selectbox(
+        "Select a team to sell", 
+        list(player_data["portfolio"].keys()), 
+        key="sell_team"
+    )
+    sell_shares = st.number_input(
+        "Enter shares to sell", 
+        min_value=0.1, 
+        max_value=player_data["portfolio"].get(sell_team, 0), 
+        step=0.1, 
+        key="sell_shares"
+    )
 
-if st.button("Sell"):
-    if sell_team in player_data["portfolio"] and player_data["portfolio"][sell_team] >= sell_shares:
-        sell_price = st.session_state.teams[sell_team] * sell_shares
-        player_data["cash"] += sell_price
-        player_data["portfolio"][sell_team] -= sell_shares
-        
-        # Remove the team from the portfolio if all shares are sold
-        if player_data["portfolio"][sell_team] == 0:
-            del player_data["portfolio"][sell_team]
-            del player_data["cost_basis"][sell_team]
+    if st.button("Sell"):
+        if sell_team in player_data["portfolio"] and player_data["portfolio"][sell_team] >= sell_shares:
+            sell_price = st.session_state.teams[sell_team] * sell_shares
+            player_data["cash"] += sell_price
+            player_data["portfolio"][sell_team] -= sell_shares
 
-        st.success(f"{player_name} sold {sell_shares:.2f} shares of {sell_team} at {st.session_state.teams[sell_team]:.2f} each.")
-    else:
-        st.error("Not enough shares to sell.")
+            # Remove the team from the portfolio if all shares are sold
+            if player_data["portfolio"][sell_team] == 0:
+                del player_data["portfolio"][sell_team]
+                del player_data["cost_basis"][sell_team]
+
+            st.success(f"{player_name} sold {sell_shares:.2f} shares of {sell_team} at {st.session_state.teams[sell_team]:.2f} each.")
+        else:
+            st.error("Not enough shares to sell.")
+else:
+    st.write("You do not own any stocks to sell.")
 
 if page == "Portfolio":
     st.subheader("📈 Player Portfolio")
