@@ -45,6 +45,42 @@ class SportsStockMarket:
         }
         self.k = k  # Weight constant for ELO calculation
 
+# Simple login system
+USERS = {
+    "andre": "password123",
+    "grace": "securepass",
+    "margot": "letmein"
+}
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.current_user = None
+
+def login():
+    st.sidebar.subheader("🔑 Login")
+    username = st.sidebar.text_input("Username")
+    password = st.sidebar.text_input("Password", type="password")
+    if st.sidebar.button("Login"):
+        if username in USERS and USERS[username] == password:
+            st.session_state.logged_in = True
+            st.session_state.current_user = username
+            st.sidebar.success(f"Welcome, {username}!")
+            st.experimental_rerun()
+        else:
+            st.sidebar.error("Invalid username or password")
+
+def logout():
+    if st.sidebar.button("Logout"):
+        st.session_state.logged_in = False
+        st.session_state.current_user = None
+        st.experimental_rerun()
+
+if not st.session_state.logged_in:
+    login()
+    st.stop()
+else:
+    logout()
+
 # Initialize the Market
 market = SportsStockMarket()
 
@@ -77,7 +113,7 @@ if page == "Home":
 
 elif page == "Trade":
     st.subheader("💰 Buy & Sell Stocks")
-    player_name = st.selectbox("Select Player", list(st.session_state.players.keys()))
+    player_name = st.session_state.current_user.capitalize()
     player_data = st.session_state.players[player_name]
 
     st.write(f"Welcome, {player_name}! Your balance: **${player_data['cash']:.2f}**")
@@ -93,47 +129,4 @@ elif page == "Trade":
             st.success(f"{player_name} bought {buy_shares:.2f} shares of {buy_team} at {market.teams[buy_team]:.2f} each.")
         else:
             st.error("Insufficient funds.")
-
-elif page == "Game Log":
-    st.subheader("📜 Game Log (ELO Updates)")
-    if st.session_state.game_log:
-        for log in st.session_state.game_log[::-1]:
-            st.write(log)
-    else:
-        st.write("No game updates yet.")
-
-elif page == "Portfolio":
-    st.subheader("📈 Player Portfolio")
-    player_name = st.selectbox("Select Player to View Portfolio", list(st.session_state.players.keys()))
-    player_data = st.session_state.players[player_name]
-    st.write(f"**Cash Balance:** ${player_data['cash']:.2f}")
-    portfolio = player_data["portfolio"]
-    cost_basis = player_data["cost_basis"]
-    
-    if portfolio:
-        portfolio_df = pd.DataFrame(portfolio.items(), columns=["Team", "Shares Owned"])
-        portfolio_df["Current Price"] = portfolio_df["Team"].apply(lambda x: st.session_state.teams.get(x, 0))
-        portfolio_df["Total Value"] = portfolio_df["Shares Owned"] * portfolio_df["Current Price"]
-        portfolio_df["Avg Cost Basis"] = portfolio_df["Team"].apply(lambda x: cost_basis.get(x, 0))
-        portfolio_df["Total Cost"] = portfolio_df["Shares Owned"] * portfolio_df["Avg Cost Basis"]
-        portfolio_df["Unrealized Gains/Losses"] = portfolio_df["Total Value"] - portfolio_df["Total Cost"]
-        portfolio_df["% Change"] = (portfolio_df["Unrealized Gains/Losses"] / portfolio_df["Total Cost"]) * 100
-        
-        st.dataframe(portfolio_df.style.format({
-            "Shares Owned": "{:.2f}",
-            "Current Price": "${:.2f}",
-            "Total Value": "${:.2f}",
-            "Avg Cost Basis": "${:.2f}",
-            "Total Cost": "${:.2f}",
-            "Unrealized Gains/Losses": "${:.2f}",
-            "% Change": "{:.2f}%"
-        }))
-    else:
-        st.write("No shares owned yet.")
-
-elif page == "Leaderboard":
-    st.subheader("🏆 Leaderboard (Sorted by Portfolio Value)")
-    player_values = {p: st.session_state.players[p]["cash"] + sum(st.session_state.teams[t] * s for t, s in st.session_state.players[p]["portfolio"].items()) for p in st.session_state.players}
-    leaderboard_df = pd.DataFrame(player_values.items(), columns=["Player", "Total Value"]).sort_values(by="Total Value", ascending=False)
-    st.dataframe(leaderboard_df.style.format({"Total Value": "${:.2f}"}))
 
