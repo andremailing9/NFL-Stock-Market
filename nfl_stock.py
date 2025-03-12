@@ -101,6 +101,25 @@ if "game_log" not in st.session_state:
 st.title("🏈 Sports Stock Market Game")
 page = st.sidebar.radio("Navigate", ["Home", "Trade", "Portfolio", "Leaderboard", "Game Log"])
 
+if page == "Trade":
+    st.subheader("💰 Buy & Sell Stocks")
+    player_name = st.session_state.current_user.capitalize()
+    player_data = st.session_state.players[player_name]
+
+    st.write(f"Welcome, {player_name}! Your balance: **${player_data['cash']:.2f}**")
+
+    buy_team = st.selectbox("Select a team to buy", list(market.teams.keys()))
+    buy_shares = st.number_input("Enter shares to buy", min_value=0.1, step=0.1)
+    if st.button("Buy"):
+        price = market.teams[buy_team] * buy_shares
+        if player_data["cash"] >= price:
+            player_data["cash"] -= price
+            player_data["portfolio"][buy_team] = player_data["portfolio"].get(buy_team, 0) + buy_shares
+            player_data["cost_basis"][buy_team] = (player_data["cost_basis"].get(buy_team, 0) * (player_data["portfolio"].get(buy_team, 0) - buy_shares) + (price)) / player_data["portfolio"][buy_team]
+            st.success(f"{player_name} bought {buy_shares:.2f} shares of {buy_team} at {market.teams[buy_team]:.2f} each.")
+        else:
+            st.error("Insufficient funds.")
+
 if page == "Portfolio":
     st.subheader("📈 Player Portfolio")
     player_name = st.session_state.current_user.capitalize()
@@ -129,4 +148,3 @@ if page == "Portfolio":
         }))
     else:
         st.write("No shares owned yet.")
-
