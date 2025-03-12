@@ -119,7 +119,10 @@ if page == "Trade":
             st.success(f"{player_name} bought {buy_shares:.2f} shares of {buy_team} at {market.teams[buy_team]:.2f} each.")
         else:
             st.error("Insufficient funds.")
- # Sell Stocks Feature
+# Ensure player data exists before accessing portfolio
+if "portfolio" not in player_data:
+    player_data["portfolio"] = {}
+
 if player_data["portfolio"]:  # Check if player owns any stocks
     sell_team = st.selectbox(
         "Select a team to sell", 
