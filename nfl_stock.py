@@ -101,32 +101,32 @@ if "game_log" not in st.session_state:
 st.title("🏈 Sports Stock Market Game")
 page = st.sidebar.radio("Navigate", ["Home", "Trade", "Portfolio", "Leaderboard", "Game Log"])
 
-if page == "Home":
-    st.subheader("📊 Team Stock Prices")
-    elo_df = pd.DataFrame(st.session_state.teams.items(), columns=["Team", "ELO Rating"])
-    st.dataframe(elo_df.style.format({"ELO Rating": "{:.2f}"}))
-    
-    if st.button("🔄 Update ELOs with Live Scores"):
-        st.session_state.game_log.append("Updated ELOs with latest scores.")
-        st.success("ELO Ratings Updated!")
-        st.rerun()
-
-elif page == "Trade":
-    st.subheader("💰 Buy & Sell Stocks")
+if page == "Portfolio":
+    st.subheader("📈 Player Portfolio")
     player_name = st.session_state.current_user.capitalize()
     player_data = st.session_state.players[player_name]
-
-    st.write(f"Welcome, {player_name}! Your balance: **${player_data['cash']:.2f}**")
-
-    buy_team = st.selectbox("Select a team to buy", list(market.teams.keys()))
-    buy_shares = st.number_input("Enter shares to buy", min_value=0.1, step=0.1)
-    if st.button("Buy"):
-        price = market.teams[buy_team] * buy_shares
-        if player_data["cash"] >= price:
-            player_data["cash"] -= price
-            player_data["portfolio"][buy_team] = player_data["portfolio"].get(buy_team, 0) + buy_shares
-            player_data["cost_basis"][buy_team] = (player_data["cost_basis"].get(buy_team, 0) * (player_data["portfolio"].get(buy_team, 0) - buy_shares) + (price)) / player_data["portfolio"][buy_team]
-            st.success(f"{player_name} bought {buy_shares:.2f} shares of {buy_team} at {market.teams[buy_team]:.2f} each.")
-        else:
-            st.error("Insufficient funds.")
+    st.write(f"**Cash Balance:** ${player_data['cash']:.2f}")
+    portfolio = player_data["portfolio"]
+    cost_basis = player_data["cost_basis"]
+    
+    if portfolio:
+        portfolio_df = pd.DataFrame(portfolio.items(), columns=["Team", "Shares Owned"])
+        portfolio_df["Current Price"] = portfolio_df["Team"].apply(lambda x: st.session_state.teams.get(x, 0))
+        portfolio_df["Total Value"] = portfolio_df["Shares Owned"] * portfolio_df["Current Price"]
+        portfolio_df["Avg Cost Basis"] = portfolio_df["Team"].apply(lambda x: cost_basis.get(x, 0))
+        portfolio_df["Total Cost"] = portfolio_df["Shares Owned"] * portfolio_df["Avg Cost Basis"]
+        portfolio_df["Unrealized Gains/Losses"] = portfolio_df["Total Value"] - portfolio_df["Total Cost"]
+        portfolio_df["% Change"] = (portfolio_df["Unrealized Gains/Losses"] / portfolio_df["Total Cost"]) * 100
+        
+        st.dataframe(portfolio_df.style.format({
+            "Shares Owned": "{:.2f}",
+            "Current Price": "${:.2f}",
+            "Total Value": "${:.2f}",
+            "Avg Cost Basis": "${:.2f}",
+            "Total Cost": "${:.2f}",
+            "Unrealized Gains/Losses": "${:.2f}",
+            "% Change": "{:.2f}%"
+        }))
+    else:
+        st.write("No shares owned yet.")
 
